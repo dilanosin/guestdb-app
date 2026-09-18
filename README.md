@@ -36,6 +36,27 @@ python -m venv .venv
 
 Open http://127.0.0.1:8000 and sign in.
 
+## Review access (Codespaces)
+
+The app runs live in a GitHub Codespace ready for review:
+
+- **Review URL:** https://guestdb-r76gxr7p46qr356p7-8000.app.github.dev
+- **Demo credentials:**
+
+  | Username | Password | Role |
+  | --- | --- | --- |
+  | `admin` | `admin12345` | Superuser / IT Administrator |
+  | `commercial` | `demo12345` | Commercial Manager |
+  | `organizer` | `demo12345` | Event Organizer |
+  | `itadmin` | `demo12345` | IT Administrator |
+  | `am1` – `am6` | `demo12345` | Account Manager |
+
+- The Codespace auto-starts Django on port 8000 (public), auto-seeds 1,000 mock
+  contacts, and stops after 30 minutes of inactivity. Restart it with
+  `gh codespace start` and the server comes back automatically.
+- If a Codespace is deleted and recreated, it gets a new `*-8000.app.github.dev`
+  hostname — update the Review URL above accordingly.
+
 ## Scheduled workflows
 
 Run via cron / Task Scheduler / Celery Beat:
