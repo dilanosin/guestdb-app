@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Events — Guest DB{% endblock %}
+{% block content %}
+<h1 class="page-title">Event Guest List Builder</h1>
+<p class="muted">Search and filter the active directory, then export a clean roster for your event.</p>
+
+<form class="filters" method="get">
+  <input type="text" name="q" placeholder="Search name, company, email…" value="{{ q }}">
+  <select name="tier">
+    <option value="">All tiers</option>
+    {% for value, label in tiers %}<option value="{{ value }}" {% if picked_tier == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <input type="text" name="company" placeholder="Company" value="{{ picked_company }}">
+  <button class="btn" type="submit">Filter</button>
+  <a class="btn" href="{% url 'export_csv' %}?{{ request.GET.urlencode }}">Export CSV</a>
+</form>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr><th>Name</th><th>Position</th><th>Company</th><th>Email</th><th>Telephone</th><th>Tier</th></tr>
+    </thead>
+    <tbody>
+      {% for c in contacts %}
+      <tr>
+        <td><strong>{{ c.full_name }}</strong></td>
+        <td>{{ c.position }}</td>
+        <td>{{ c.company }}</td>
+        <td>{{ c.email }}</td>
+        <td>{{ c.telephone|default:"—" }}</td>
+        <td><span class="pill tier-{{ c.tier|lower }}">Tier {{ c.tier }}</span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No active contacts match.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

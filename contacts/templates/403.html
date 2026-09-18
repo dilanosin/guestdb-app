@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Access denied{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:3rem auto;text-align:center;">
+  <h1 class="page-title">Access denied (403)</h1>
+  <p class="muted">Your role doesn't have permission to do that. If this looks wrong, ask the Commercial Manager or an IT Administrator to update your role.</p>
+  <a class="btn" href="{% url 'dashboard' %}" style="margin-top:1rem;">Back to Dashboard</a>
+</div>
+{% endblock %}

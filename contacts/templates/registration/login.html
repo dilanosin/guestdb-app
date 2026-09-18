@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Sign in — Guest DB{% endblock %}
+{% block body_class %}login-page{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <form method="post" class="card login-card shadow-lg">
+    {% csrf_token %}
+    <div class="logo-row">
+      <span class="logo-mark">GD</span>
+      <h1>Master Guest &amp; Relationship Database</h1>
+    </div>
+    <p class="login-sub">Sign in to continue to your workspace.</p>
+    {% if form.errors %}<div class="msg error">Invalid username or password.</div>{% endif %}
+    <label>Username{{ form.username }}</label>
+    <label>Password{{ form.password }}</label>
+    <button type="submit" class="btn">Sign in</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{% if is_my_contacts %}My Contacts{% else %}All Contacts{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{% if is_my_contacts %}My Contacts{% else %}All Contacts{% endif %}</h1>
+    <p class="muted" style="margin:0">{% if is_my_contacts %}Contacts you own and maintain.{% else %}Every relationship in the database.{% endif %}</p>
+  </div>
+  {% if perms.contacts.add_contact %}<a class="btn" href="{% url 'contact_add' %}">+ Add Contact</a>{% endif %}
+</div>
+
+<form class="filters" method="get">
+  <input type="text" name="q" placeholder="Search name, company, position, email…" value="{{ request.GET.q }}">
+  <select name="tier">
+    <option value="">All tiers</option>
+    {% for value, label in tiers %}<option value="{{ value }}" {% if request.GET.tier == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <button class="btn" type="submit">Filter</button>
+  {% if is_my_contacts %}<a class="btn btn-secondary" href="?overdue=1">Show overdue</a>{% endif %}
+</form>
+
+<div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th><th>Position</th><th>Company</th><th>Owner</th><th>Tier</th><th>Status</th><th>Last validated</th><th>Validation</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in contacts %}
+      <tr>
+        <td><strong>{{ c.full_name }}</strong></td>
+        <td>{{ c.position }}</td>
+        <td>{{ c.company }}</td>
+        <td>{{ c.owner.get_full_name|default:c.owner.username }}</td>
+        <td><span class="pill tier-{{ c.tier|lower }}">Tier {{ c.tier }}</span></td>
+        <td>
+          {% if c.status == 'ACTIVE' %}<span class="pill green">{{ c.get_status_display }}</span>
+          {% elif c.status == 'INACTIVE' %}<span class="pill neutral">{{ c.get_status_display }}</span>
+          {% else %}<span class="pill amber">{{ c.get_status_display }}</span>{% endif %}
+        </td>
+        <td>{{ c.last_validated_at|date:"Y-m-d" }}</td>
+        <td>
+          {% if c.status != 'ACTIVE' %}<span class="pill neutral">—</span>
+          {% elif c.is_validation_overdue %}<span class="pill red">Overdue</span>
+          {% elif c.validation_status == 'due_soon' %}<span class="pill amber">Due soon</span>
+          {% else %}<span class="pill green">Valid</span>{% endif %}
+        </td>
+        <td class="actions">
+          {% if perms.contacts.change_contact %}<a href="{% url 'contact_edit' c.pk %}" class="btn-link">Edit</a>{% endif %}
+          {% if c.status == 'ACTIVE' and perms.contacts.change_contact %}<a href="{% url 'contact_validate' c.pk %}" class="btn-link">Validate</a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem;">No contacts found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+<div class="pagination">
+  {% if page_obj.has_previous %}<a class="btn-link" href="?page={{ page_obj.previous_page_number }}">‹ Prev</a>{% endif %}
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a class="btn-link" href="?page={{ page_obj.next_page_number }}">Next ›</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

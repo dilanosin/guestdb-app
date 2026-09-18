@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Guest DB{% endblock %}
+{% block content %}
+
+<!-- Hero -->
+<div class="dash-hero">
+  <div class="dash-hero-text">
+    <p class="dash-eyebrow">{{ today|date:"l, j F Y" }}</p>
+    <h1 class="dash-title">{{ greeting }}, {{ user.get_full_name|default:user.username }}</h1>
+    <p class="dash-sub">Here's the validation health of your guest &amp; relationship database.</p>
+  </div>
+  <div class="dash-hero-actions">
+    <a class="btn btn-secondary" href="{% url 'contact_add' %}" style="background:#fff;color:#2563eb;border-color:#dbeafe">+ New contact</a>
+    <a class="btn" href="{% url 'export_xlsx' %}">Export Excel</a>
+  </div>
+</div>
+
+<!-- KPI cards -->
+<div class="kpi-grid">
+  <div class="card kpi">
+    <div class="kpi-head">
+      <span class="kpi-ico ico-green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </span>
+      <span class="kpi-label">Tier A validated</span>
+    </div>
+    <span class="kpi-value">{{ kpis.tier_a_pct }}<small>%</small></span>
+    <div class="bar-track"><div class="bar-fill {% if kpis.tier_a_pct >= 100 %}fill-green{% else %}fill-amber{% endif %}" style="width:{{ kpis.tier_a_pct }}%"></div></div>
+    <span class="kpi-sub {% if kpis.tier_a_pct >= 100 %}good{% else %}bad{% endif %}">Target 100% · {{ kpis.tier_a_valid }}/{{ kpis.tier_a_total }} active</span>
+  </div>
+
+  <div class="card kpi">
+    <div class="kpi-head">
+      <span class="kpi-ico ico-blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </span>
+      <span class="kpi-label">Active contacts validated</span>
+    </div>
+    <span class="kpi-value">{{ kpis.overall_pct }}<small>%</small></span>
+    <div class="bar-track"><div class="bar-fill {% if kpis.overall_pct >= 95 %}fill-green{% else %}fill-amber{% endif %}" style="width:{{ kpis.overall_pct }}%"></div></div>
+    <span class="kpi-sub {% if kpis.overall_pct >= 95 %}good{% else %}bad{% endif %}">Target 95% · {{ kpis.total_active }} active total</span>
+  </div>
+
+  <div class="card kpi">
+    <div class="kpi-head">
+      <span class="kpi-ico ico-red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </span>
+      <span class="kpi-label">Overdue validations</span>
+    </div>
+    <span class="kpi-value {% if kpis.overdue_count %}bad{% endif %}">{{ kpis.overdue_count }}</span>
+    <div class="bar-track"><div class="bar-fill fill-red" style="width:{{ kpis.overdue_pct }}%"></div></div>
+    <span class="kpi-sub">Tier A overdue: {{ kpis.overdue_tier_a }}</span>
+  </div>
+
+  <div class="card kpi">
+    <div class="kpi-head">
+      <span class="kpi-ico ico-slate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </span>
+      <span class="kpi-label">Without owner</span>
+    </div>
+    <span class="kpi-value {% if kpis.unowned %}bad{% endif %}">{{ kpis.unowned }}</span>
+    <div class="bar-track"><div class="bar-fill fill-slate" style="width:{% if kpis.unowned %}100{% else %}0{% endif %}%"></div></div>
+    <span class="kpi-sub {% if kpis.unowned %}bad{% else %}good{% endif %}">Target 0</span>
+  </div>
+
+  <div class="card kpi">
+    <div class="kpi-head">
+      <span class="kpi-ico ico-amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 22 22 22 12 2"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="12" y1="19" x2="12.01" y2="19"/></svg>
+      </span>
+      <span class="kpi-label">Unresolved duplicates</span>
+    </div>
+    <span class="kpi-value {% if kpis.unresolved_duplicates %}bad{% endif %}">{{ kpis.unresolved_duplicates }}</span>
+    <div class="bar-track"><div class="bar-fill {% if kpis.unresolved_duplicates %}fill-red{% else %}fill-green{% endif %}" style="width:{% if kpis.unresolved_duplicates %}100{% else %}0{% endif %}%"></div></div>
+    <span class="kpi-sub {% if kpis.unresolved_duplicates %}bad{% else %}good{% endif %}">
+      {% if kpis.unresolved_duplicates %}<a href="{% url 'duplicates' %}">Review now</a>{% else %}Target 0{% endif %}
+    </span>
+  </div>
+</div>
+
+<!-- Main row: chart + owner accountability -->
+<div class="grid-2">
+  <div class="card chart-card">
+    <div class="card-title-row">
+      <div>
+        <h2>Validation by Tier</h2>
+        <p class="card-sub">Validated vs overdue among active contacts</p>
+      </div>
+      <div class="chart-legend">
+        <span><i class="dot dot-green"></i>Validated</span>
+        <span><i class="dot dot-red"></i>Overdue</span>
+      </div>
+    </div>
+    <div class="chart-box">
+      <canvas id="tierChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title-row">
+      <div>
+        <h2>Owner Accountability</h2>
+        <p class="card-sub">Completion rate by relationship owner</p>
+      </div>
+      <span class="badge-count">{{ owners|length }} owners</span>
+    </div>
+    <div class="owner-list">
+      {% for o in owners %}
+      <div class="owner-row">
+        <div class="owner-row-top">
+          <div class="owner-info">
+            <span class="owner-name">{{ o.name }}</span>
+            <span class="owner-meta">{{ o.total }} contacts</span>
+          </div>
+          <span class="owner-pct {% if o.overdue %}bad-txt{% else %}good-txt{% endif %}">{{ o.completion }}%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill {% if o.overdue %}fill-amber{% else %}fill-green{% endif %}" style="width:{{ o.completion }}%"></div></div>
+        <div class="owner-row-sub">
+          <span>Overdue: <strong class="{% if o.overdue %}bad-txt{% endif %}">{{ o.overdue }}</strong></span>
+        </div>
+      </div>
+      {% empty %}
+      <p class="muted" style="margin:0">No active contacts.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Tier breakdown table -->
+<div class="card section-gap">
+  <div class="card-title-row">
+    <div>
+      <h2>All Tiers — Detailed</h2>
+      <p class="card-sub">Validated and overdue counts per strategic tier</p>
+    </div>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Tier</th>
+        <th>Active contacts</th>
+        <th>Validated</th>
+        <th>Overdue</th>
+        <th style="width:30%">Progress</th>
+        <th>% Validated</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tiers %}
+      <tr>
+        <td><span class="pill tier-{{ t.label|lower }}">Tier {{ t.label }}</span></td>
+        <td>{{ t.total }}</td>
+        <td class="good-txt">{{ t.validated }}</td>
+        <td class="{% if t.overdue %}bad-txt{% endif %}">{{ t.overdue }}</td>
+        <td><div class="bar-track"><div class="bar-fill {% if t.pct >= 100 %}fill-green{% elif t.pct < 95 %}fill-red{% else %}fill-amber{% endif %}" style="width:{{ t.pct }}%"></div></div></td>
+        <td class="{% if t.pct >= 100 %}good-txt{% elif t.pct < 95 %}bad-txt{% endif %}">{{ t.pct }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  new Chart(document.getElementById('tierChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Tier A', 'Tier B', 'Tier C'],
+      datasets: [
+        {
+          label: 'Validated',
+          data: [{{ kpis.tier_validation.A.validated }}, {{ kpis.tier_validation.B.validated }}, {{ kpis.tier_validation.C.validated }}],
+          backgroundColor: '#059669',
+          hoverBackgroundColor: '#047857',
+          borderRadius: 6,
+          maxBarThickness: 46
+        },
+        {
+          label: 'Overdue',
+          data: [{{ kpis.tier_validation.A.overdue }}, {{ kpis.tier_validation.B.overdue }}, {{ kpis.tier_validation.C.overdue }}],
+          backgroundColor: '#f87171',
+          hoverBackgroundColor: '#dc2626',
+          borderRadius: 6,
+          maxBarThickness: 46
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          titleColor: '#e2e8f0',
+          bodyColor: '#f8fafc',
+          padding: 10,
+          cornerRadius: 8,
+          displayColors: true
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 12, weight: 600 } } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', precision: 0 } }
+      }
+    }
+  });
+</script>
+{% endblock %}
