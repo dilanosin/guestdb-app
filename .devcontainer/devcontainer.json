@@ -15,6 +15,7 @@
     "DJANGO_SUPERUSER_PASSWORD": "admin12345"
   },
   "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && python manage.py migrate && python manage.py setup_roles && python manage.py seed_users && python manage.py createsuperuser --noinput || true && python manage.py seed_mock_contacts --total 1000 || true",
+  "postStartCommand": "nohup python manage.py runserver 0.0.0.0:8000 > /tmp/guestdb.log 2>&1 &",
   "customizations": {
     "codespaces": {
       "codespacesAdditionalRepositories": []
