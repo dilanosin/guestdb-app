@@ -3,7 +3,7 @@
 Distribution:
 - Tiers: 15% Tier A, 35% Tier B, 50% Tier C
 - Validation: 70% valid within SLA, 20% overdue past tier threshold, 10% Inactive/Archived
-- Owners: evenly mapped across simulated Account Managers
+- Owners: every contact owned by the single `manager` account
 """
 
 import random
@@ -55,7 +55,7 @@ class Command(BaseCommand):
         created = 0
         for tier, count in tier_counts.items():
             for i in range(count):
-                owner = random.choice(owners)
+                owner = owners[i % len(owners)]
                 status, last_validated = self._pick_validation_state()
                 email = fake.unique.email()
 
@@ -84,16 +84,14 @@ class Command(BaseCommand):
         )
 
     def _ensure_owners(self):
-        """Relationship Owners as a mix of all role groups."""
-        from django.contrib.auth.models import Group
-
-        role_names = ["Account Managers", "Commercial Manager", "IT Administrator"]
+        """The single `manager` account owns every seeded contact."""
+        manager = User.objects.filter(username="manager").first()
+        if manager:
+            return [manager]
         owners = list(
-            User.objects.filter(groups__name__in=role_names).distinct()
+            User.objects.filter(groups__name="Account Managers").distinct()
         )
-        if not owners:
-            owners = list(User.objects.all())
-        return owners
+        return owners or list(User.objects.all())
 
     def _pick_validation_state(self):
         """70% valid, 20% overdue, 10% inactive/archived."""

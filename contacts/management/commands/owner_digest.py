@@ -1,7 +1,8 @@
 """Weekly Relationship Owner digest workflow (spec: Flow 2).
 
-Groups overdue contacts by Relationship Owner and sends a single consolidated
-email to each owner with a link to their 'My Contacts' overdue view.
+Groups overdue contacts by Relationship Owner and sends one consolidated email
+to each owner with a link to their 'My Contacts' overdue view. With managers
+consolidated into a single `manager` account this sends exactly one email.
 """
 
 from django.contrib.auth import get_user_model

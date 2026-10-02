@@ -49,7 +49,7 @@ The app runs live in a GitHub Codespace ready for review:
   | `commercial` | `demo12345` | Commercial Manager |
   | `organizer` | `demo12345` | Event Organizer |
   | `itadmin` | `demo12345` | IT Administrator |
-  | `am1` – `am6` | `demo12345` | Account Manager |
+  | `manager` | `demo12345` | Account Manager (owns all contacts) |
 
 - The Codespace auto-starts Django on port 8000 (public), auto-seeds 1,000 mock
   contacts, and stops after 30 minutes of inactivity. Restart it with
