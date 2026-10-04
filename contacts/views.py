@@ -65,6 +65,9 @@ def get_kpis():
     return kpis
 
 
+TREND_RANGES = (6, 12, 24)
+
+
 def overdue_trend(months=12):
     """Cumulative overdue active contacts at each month end, oldest first.
 
@@ -72,6 +75,7 @@ def overdue_trend(months=12):
     last_validated_at + tier SLA. Status is evaluated as of today, so a
     contact since archived or deactivated is excluded from every month.
     """
+    months = max(2, min(int(months or 12), 36))
     now = timezone.localtime(timezone.now())
 
     sla_by_tier = {
@@ -106,6 +110,10 @@ def overdue_trend(months=12):
         "labels_json": json.dumps(labels),
         "counts_json": json.dumps(counts),
         "months": months,
+        "ranges": TREND_RANGES,
+        "peak": max(counts) if counts else 0,
+        "delta": (counts[-1] - counts[0]) if len(counts) > 1 else 0,
+        "delta_abs": abs(counts[-1] - counts[0]) if len(counts) > 1 else 0,
     }
 
 
@@ -160,6 +168,8 @@ def owner_breakdown():
 
 @login_required
 def dashboard(request):
+    requested = request.GET.get("range")
+    trend_months = int(requested) if requested and requested.isdigit() else 12
     kpis = get_kpis()
     tiers = []
     for label in ["A", "B", "C"]:
@@ -187,7 +197,8 @@ def dashboard(request):
             "kpis": kpis,
             "tiers": tiers,
             "owners": owner_breakdown(),
-            "trend": overdue_trend(),
+            "trend": overdue_trend(trend_months),
+            "unresolved_duplicates": kpis["unresolved_duplicates"],
             "greeting": greeting,
             "today": timezone.localtime(timezone.now()),
         },

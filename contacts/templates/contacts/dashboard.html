@@ -1,25 +1,38 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — Guest DB{% endblock %}
-{% block content %}
+{% block body_class %}dashboard{% endblock %}
 
-<!-- Hero -->
-<div class="dash-hero">
+{% block content %}
+<!-- ============ Hero ============ -->
+<header class="dash-hero">
   <div class="dash-hero-text">
     <p class="dash-eyebrow">{{ today|date:"l, j F Y" }}</p>
     <h1 class="dash-title">{{ greeting }}, {{ user.get_full_name|default:user.username }}</h1>
-    <p class="dash-sub">Here's the validation health of your guest &amp; relationship database.</p>
+    <p class="dash-sub">
+      {% if kpis.overdue_count %}
+        <strong style="color:var(--bad-text)">{{ kpis.overdue_count }}</strong> of {{ kpis.total_active }} active relationships are past their validation SLA.
+      {% else %}
+        All {{ kpis.total_active }} active relationships are within their validation SLA.
+      {% endif %}
+    </p>
   </div>
   <div class="dash-hero-actions">
-    <a class="btn btn-secondary" href="{% url 'contact_add' %}" style="background:#fff;color:#2563eb;border-color:#dbeafe">+ New contact</a>
-    <a class="btn" href="{% url 'export_xlsx' %}">Export Excel</a>
+    <a class="btn btn-secondary" href="{% url 'contact_add' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      New contact
+    </a>
+    <a class="btn" href="{% url 'export_xlsx' %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export Excel
+    </a>
   </div>
-</div>
+</header>
 
-<!-- KPI cards -->
-<div class="kpi-grid">
-  <div class="card kpi">
+<!-- ============ KPI cards ============ -->
+<section class="kpi-grid" aria-label="Key performance indicators">
+  <div class="card kpi {% if kpis.tier_a_pct >= 100 %}accent-good{% else %}accent-warn{% endif %}">
     <div class="kpi-head">
-      <span class="kpi-ico ico-green">
+      <span class="kpi-ico ico-green" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
       </span>
       <span class="kpi-label">Tier A validated</span>
@@ -29,71 +42,82 @@
     <span class="kpi-sub {% if kpis.tier_a_pct >= 100 %}good{% else %}bad{% endif %}">Target 100% · {{ kpis.tier_a_valid }}/{{ kpis.tier_a_total }} active</span>
   </div>
 
-  <div class="card kpi">
+  <div class="card kpi {% if kpis.overall_pct >= 95 %}accent-good{% else %}accent-warn{% endif %}">
     <div class="kpi-head">
-      <span class="kpi-ico ico-blue">
+      <span class="kpi-ico ico-blue" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </span>
-      <span class="kpi-label">Active contacts validated</span>
+      <span class="kpi-label">Active validated</span>
     </div>
     <span class="kpi-value">{{ kpis.overall_pct }}<small>%</small></span>
     <div class="bar-track"><div class="bar-fill {% if kpis.overall_pct >= 95 %}fill-green{% else %}fill-amber{% endif %}" style="width:{{ kpis.overall_pct }}%"></div></div>
     <span class="kpi-sub {% if kpis.overall_pct >= 95 %}good{% else %}bad{% endif %}">Target 95% · {{ kpis.total_active }} active total</span>
   </div>
 
-  <div class="card kpi">
+  <div class="card kpi {% if kpis.overdue_count %}accent-bad{% else %}accent-good{% endif %}">
     <div class="kpi-head">
-      <span class="kpi-ico ico-red">
+      <span class="kpi-ico ico-red" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </span>
       <span class="kpi-label">Overdue validations</span>
     </div>
-    <span class="kpi-value {% if kpis.overdue_count %}bad{% endif %}">{{ kpis.overdue_count }}</span>
-    <div class="bar-track"><div class="bar-fill fill-red" style="width:{{ kpis.overdue_pct }}%"></div></div>
-    <span class="kpi-sub">Tier A overdue: {{ kpis.overdue_tier_a }}</span>
+    <span class="kpi-value {% if kpis.overdue_count %}bad{% else %}good{% endif %}">{{ kpis.overdue_count }}</span>
+    <div class="bar-track"><div class="bar-fill {% if kpis.overdue_count %}fill-red{% else %}fill-green{% endif %}" style="width:{{ kpis.overdue_pct }}%"></div></div>
+    <span class="kpi-sub {% if kpis.overdue_tier_a %}bad{% endif %}">Tier A overdue: {{ kpis.overdue_tier_a }}</span>
   </div>
 
-  <div class="card kpi">
+  <div class="card kpi accent-slate">
     <div class="kpi-head">
-      <span class="kpi-ico ico-slate">
+      <span class="kpi-ico ico-slate" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </span>
-      <span class="kpi-label">Without owner</span>
+      <span class="kpi-label">Unowned</span>
     </div>
-    <span class="kpi-value {% if kpis.unowned %}bad{% endif %}">{{ kpis.unowned }}</span>
+    <span class="kpi-value {% if kpis.unowned %}bad{% else %}good{% endif %}">{{ kpis.unowned }}</span>
     <div class="bar-track"><div class="bar-fill fill-slate" style="width:{% if kpis.unowned %}100{% else %}0{% endif %}%"></div></div>
     <span class="kpi-sub {% if kpis.unowned %}bad{% else %}good{% endif %}">Target 0</span>
   </div>
 
-  <div class="card kpi">
+  <div class="card kpi {% if kpis.unresolved_duplicates %}accent-warn{% else %}accent-good{% endif %}">
     <div class="kpi-head">
-      <span class="kpi-ico ico-amber">
+      <span class="kpi-ico ico-amber" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 22 22 22 12 2"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="12" y1="19" x2="12.01" y2="19"/></svg>
       </span>
-      <span class="kpi-label">Unresolved duplicates</span>
+      <span class="kpi-label">Duplicates</span>
     </div>
-    <span class="kpi-value {% if kpis.unresolved_duplicates %}bad{% endif %}">{{ kpis.unresolved_duplicates }}</span>
-    <div class="bar-track"><div class="bar-fill {% if kpis.unresolved_duplicates %}fill-red{% else %}fill-green{% endif %}" style="width:{% if kpis.unresolved_duplicates %}100{% else %}0{% endif %}%"></div></div>
+    <span class="kpi-value {% if kpis.unresolved_duplicates %}bad{% else %}good{% endif %}">{{ kpis.unresolved_duplicates }}</span>
+    <div class="bar-track"><div class="bar-fill {% if kpis.unresolved_duplicates %}fill-amber{% else %}fill-green{% endif %}" style="width:{% if kpis.unresolved_duplicates %}100{% else %}0{% endif %}%"></div></div>
     <span class="kpi-sub {% if kpis.unresolved_duplicates %}bad{% else %}good{% endif %}">
       {% if kpis.unresolved_duplicates %}<a href="{% url 'duplicates' %}">Review now</a>{% else %}Target 0{% endif %}
     </span>
   </div>
-</div>
+</section>
 
-<!-- Main row: chart + owner accountability -->
-<div class="grid-2">
+<!-- ============ Trend + owner accountability ============ -->
+<section class="grid-2">
   <div class="card chart-card">
     <div class="card-title-row">
       <div>
         <h2>Overdue Trend</h2>
-        <p class="card-sub">Cumulative overdue active contacts, last {{ trend.months }} months</p>
+        <p class="card-sub">
+          Cumulative overdue active contacts, last {{ trend.months }} months
+          {% if trend.delta > 0 %}· up {{ trend.delta }} over the period
+          {% elif trend.delta < 0 %}· down {{ trend.delta_abs }} over the period
+          {% else %}· no net change{% endif %}
+        </p>
       </div>
-      <div class="chart-legend">
-        <span><i class="dot dot-red"></i>Overdue</span>
+      <div class="segmented" role="group" aria-label="Trend time range">
+        {% for r in trend.ranges %}
+          <a href="?range={{ r }}" {% if r == trend.months %}aria-current="true"{% endif %}>{{ r }}M</a>
+        {% endfor %}
       </div>
     </div>
+    <div class="chart-legend" style="margin-bottom:0.75rem">
+      <span><i class="dot dot-red" aria-hidden="true"></i>Overdue</span>
+      <span><i class="dot dot-dashed" aria-hidden="true"></i>Target 0</span>
+    </div>
     <div class="chart-box">
-      <canvas id="overdueChart" height="300"></canvas>
+      <canvas id="overdueChart" height="300" role="img" aria-label="Line chart of cumulative overdue contacts over the last {{ trend.months }} months"></canvas>
     </div>
   </div>
 
@@ -103,7 +127,7 @@
         <h2>Owner Accountability</h2>
         <p class="card-sub">Completion rate by relationship owner</p>
       </div>
-      <span class="badge-count">{{ owners|length }} owners</span>
+      <span class="badge-count">{{ owners|length }} owner{{ owners|length|pluralize }}</span>
     </div>
     <div class="owner-list">
       {% for o in owners %}
@@ -111,55 +135,77 @@
         <div class="owner-row-top">
           <div class="owner-info">
             <span class="owner-name">{{ o.name }}</span>
-            <span class="owner-meta">{{ o.total }} contacts</span>
+            <span class="owner-meta">{{ o.total }} contact{{ o.total|pluralize }}</span>
           </div>
           <span class="owner-pct {% if o.overdue %}bad-txt{% else %}good-txt{% endif %}">{{ o.completion }}%</span>
         </div>
         <div class="bar-track"><div class="bar-fill {% if o.overdue %}fill-amber{% else %}fill-green{% endif %}" style="width:{{ o.completion }}%"></div></div>
         <div class="owner-row-sub">
-          <span>Overdue: <strong class="{% if o.overdue %}bad-txt{% endif %}">{{ o.overdue }}</strong></span>
+          Overdue: <strong class="{% if o.overdue %}bad-txt{% endif %}">{{ o.overdue }}</strong>
         </div>
       </div>
       {% empty %}
-      <p class="muted" style="margin:0">No active contacts.</p>
+      <div class="empty-state">
+        <span class="empty-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <h3>No active contacts</h3>
+        <p>Seed the demo data or add a contact to see owner accountability here.</p>
+      </div>
       {% endfor %}
     </div>
   </div>
-</div>
+</section>
 
-<!-- Tier breakdown table -->
-<div class="card section-gap">
+<!-- ============ Tier breakdown ============ -->
+<section class="card section-gap">
   <div class="card-title-row">
     <div>
-      <h2>All Tiers — Detailed</h2>
+      <h2>Tier Breakdown</h2>
       <p class="card-sub">Validated and overdue counts per strategic tier</p>
     </div>
   </div>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Tier</th>
-        <th>Active contacts</th>
-        <th>Validated</th>
-        <th>Overdue</th>
-        <th style="width:30%">Progress</th>
-        <th>% Validated</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for t in tiers %}
-      <tr>
-        <td><span class="pill tier-{{ t.label|lower }}">Tier {{ t.label }}</span></td>
-        <td>{{ t.total }}</td>
-        <td class="good-txt">{{ t.validated }}</td>
-        <td class="{% if t.overdue %}bad-txt{% endif %}">{{ t.overdue }}</td>
-        <td><div class="bar-track"><div class="bar-fill {% if t.pct >= 100 %}fill-green{% elif t.pct < 95 %}fill-red{% else %}fill-amber{% endif %}" style="width:{{ t.pct }}%"></div></div></td>
-        <td class="{% if t.pct >= 100 %}good-txt{% elif t.pct < 95 %}bad-txt{% endif %}">{{ t.pct }}%</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Tier</th>
+          <th scope="col">Active</th>
+          <th scope="col">Validated</th>
+          <th scope="col">Overdue</th>
+          <th scope="col" style="width:30%">Progress</th>
+          <th scope="col">% Validated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tiers %}
+        <tr>
+          <td><span class="pill tier-{{ t.label|lower }}">Tier {{ t.label }}</span></td>
+          <td>{{ t.total }}</td>
+          <td class="good-txt">{{ t.validated }}</td>
+          <td class="{% if t.overdue %}bad-txt{% endif %}">{{ t.overdue }}</td>
+          <td>
+            <div class="bar-track" style="margin:0">
+              <div class="bar-fill {% if t.pct >= 100 %}fill-green{% elif t.pct < 95 %}fill-red{% else %}fill-amber{% endif %}" style="width:{{ t.pct }}%"></div>
+            </div>
+          </td>
+          <td class="{% if t.pct >= 100 %}good-txt{% elif t.pct < 95 %}bad-txt{% endif %}">{{ t.pct }}%</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">
+          <div class="empty-state">
+            <span class="empty-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M19 9l-5 5-4-4-3 3"></path></svg>
+            </span>
+            <h3>Nothing to summarise yet</h3>
+            <p>Once contacts exist, tier performance appears here.</p>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
@@ -175,6 +221,7 @@
           borderColor: '#dc2626',
           backgroundColor: 'rgba(248, 113, 113, 0.15)',
           hoverBorderColor: '#b91c1c',
+          hoverBackgroundColor: 'rgba(248, 113, 113, 0.25)',
           borderWidth: 2.5,
           pointRadius: 4,
           pointHoverRadius: 6,
@@ -206,10 +253,36 @@
         }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 12, weight: 600 } } },
-        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', precision: 0 } }
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: '#94a3b8', font: { size: 11, weight: 600 }, maxRotation: 0, autoSkipPadding: 12 }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(148, 163, 184, 0.16)' },
+          border: { display: false },
+          ticks: { color: '#94a3b8', precision: 0 }
+        }
       }
-    }
+    },
+    plugins: [{
+      id: 'targetLine',
+      afterDatasetsDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        if (!chartArea) return;
+        const y = scales.y.getPixelForValue(0);
+        ctx.save();
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }]
   });
 </script>
 {% endblock %}

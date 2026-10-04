@@ -1,23 +1,65 @@
 {% extends "base.html" %}
 {% block title %}Duplicates — Guest DB{% endblock %}
+
 {% block content %}
-<h1 class="page-title">Duplicate Detection</h1>
-<p class="muted">Contacts sharing the same name + company. Duplicates are blocked on create/edit; resolve any that appear here with the Commercial Manager (Custodian).</p>
+<header class="page-head">
+  <div>
+    <h1 class="page-title">Duplicate Detection</h1>
+    <p class="muted" style="margin:0">
+      Records sharing the same name and company. Duplicates are blocked on create and edit;
+      resolve anything listed here with the Commercial Manager acting as data custodian.
+    </p>
+  </div>
+  <div class="page-head-actions">
+    <span class="badge-count">{{ duplicates|length }} unresolved</span>
+  </div>
+</header>
+
+{% if duplicates %}
+  <div class="msg warning" role="status">
+    {{ duplicates|length }} potential duplicate group{{ duplicates|length|pluralize }} need{{ duplicates|length|pluralize:"s," }} review before sign-off.
+  </div>
+{% endif %}
 
 <div class="table-wrap">
-  <table class="table">
-    <thead><tr><th>Likely duplicate</th><th>Records</th><th>Status</th></tr></thead>
-    <tbody>
-      {% for d in duplicates %}
-      <tr>
-        <td>{{ d.key }}</td>
-        <td>{{ d.names|join:", " }}</td>
-        <td><span class="pill red">Potential duplicate</span></td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="3" style="text-align:center;color:var(--muted);padding:2rem;">No duplicates detected. 0 unresolved duplicates — target met.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-scroll">
+    <table class="table">
+      <caption class="visually-hidden">Potential duplicate contact groups</caption>
+      <thead>
+        <tr>
+          <th scope="col">Likely duplicate</th>
+          <th scope="col">Records</th>
+          <th scope="col">Severity</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in duplicates %}
+        <tr>
+          <td><strong>{{ d.key }}</strong></td>
+          <td>{{ d.names|join:", " }}</td>
+          <td>
+            {% if d.names|length > 2 %}
+              <span class="pill red">{{ d.names|length }} records</span>
+            {% else %}
+              <span class="pill amber">Pair</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3">
+            <div class="empty-state">
+              <span class="empty-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </span>
+              <h3>No duplicates detected</h3>
+              <p>Every record holds a unique name and company combination. Target of zero unresolved duplicates is met.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

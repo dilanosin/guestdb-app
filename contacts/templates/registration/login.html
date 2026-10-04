@@ -1,19 +1,77 @@
 {% extends "base.html" %}
 {% block title %}Sign in — Guest DB{% endblock %}
 {% block body_class %}login-page{% endblock %}
+
 {% block content %}
-<div class="login-wrap">
-  <form method="post" class="card login-card shadow-lg">
-    {% csrf_token %}
-    <div class="logo-row">
-      <span class="logo-mark">GD</span>
-      <h1>Master Guest &amp; Relationship Database</h1>
+<div class="login-shell">
+  <aside class="login-aside">
+    <div class="login-aside-brand">
+      <span class="logo-mark" aria-hidden="true">GD</span>
+      <span class="logo-text">
+        <span class="logo-title">Guest&nbsp;DB</span>
+        <span class="logo-sub">Relationships</span>
+      </span>
     </div>
-    <p class="login-sub">Sign in to continue to your workspace.</p>
-    {% if form.errors %}<div class="msg error">Invalid username or password.</div>{% endif %}
-    <label>Username{{ form.username }}</label>
-    <label>Password{{ form.password }}</label>
-    <button type="submit" class="btn">Sign in</button>
-  </form>
+
+    <div class="login-pitch">
+      <h2>Relationship data you can defend in a governance review.</h2>
+      <p>
+        A single source of truth for guest relationships, with tier-based
+        validation SLAs tracked automatically and every overdue record surfaced
+        before it becomes a reputational risk.
+      </p>
+      <ul class="login-points">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Tier A, B and C validation cycles enforced automatically
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Owner accountability for every relationship
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Duplicate detection and one-click Excel export
+        </li>
+      </ul>
+    </div>
+
+    <p class="login-aside-foot">Role-based access · Commercial Manager acts as data custodian</p>
+  </aside>
+
+  <div class="login-main">
+    <main class="card login-card">
+      <h1>Sign in to your workspace</h1>
+      <p class="login-sub">Use your assigned role account to continue.</p>
+
+      {% if form.errors %}
+        <div class="msg error" role="alert">Invalid username or password. Please try again.</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <label for="{{ form.username.id_for_label }}">
+          Username
+          {{ form.username }}
+        </label>
+        <label for="{{ form.password.id_for_label }}">
+          Password
+          {{ form.password }}
+        </label>
+        <button type="submit" class="btn">Sign in</button>
+      </form>
+
+      <div class="login-demo">
+        <p>Demo accounts · password <code>demo12345</code></p>
+        <table>
+          <tr><td>Account Manager</td><td><code>manager</code></td></tr>
+          <tr><td>Commercial Manager</td><td><code>commercial</code></td></tr>
+          <tr><td>Event Organizer</td><td><code>organizer</code></td></tr>
+          <tr><td>IT Administrator</td><td><code>itadmin</code></td></tr>
+          <tr><td>Superuser</td><td><code>admin</code> / <code>admin12345</code></td></tr>
+        </table>
+      </div>
+    </main>
+  </div>
 </div>
 {% endblock %}
