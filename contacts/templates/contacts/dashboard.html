@@ -85,16 +85,15 @@
   <div class="card chart-card">
     <div class="card-title-row">
       <div>
-        <h2>Validation by Tier</h2>
-        <p class="card-sub">Validated vs overdue among active contacts</p>
+        <h2>Overdue Trend</h2>
+        <p class="card-sub">Cumulative overdue active contacts, last {{ trend.months }} months</p>
       </div>
       <div class="chart-legend">
-        <span><i class="dot dot-green"></i>Validated</span>
         <span><i class="dot dot-red"></i>Overdue</span>
       </div>
     </div>
     <div class="chart-box">
-      <canvas id="tierChart" height="300"></canvas>
+      <canvas id="overdueChart" height="300"></canvas>
     </div>
   </div>
 
@@ -165,26 +164,25 @@
 
 {% block scripts %}
 <script>
-  new Chart(document.getElementById('tierChart'), {
-    type: 'bar',
+  new Chart(document.getElementById('overdueChart'), {
+    type: 'line',
     data: {
-      labels: ['Tier A', 'Tier B', 'Tier C'],
+      labels: {{ trend.labels_json|safe }},
       datasets: [
         {
-          label: 'Validated',
-          data: [{{ kpis.tier_validation.A.validated }}, {{ kpis.tier_validation.B.validated }}, {{ kpis.tier_validation.C.validated }}],
-          backgroundColor: '#059669',
-          hoverBackgroundColor: '#047857',
-          borderRadius: 6,
-          maxBarThickness: 46
-        },
-        {
           label: 'Overdue',
-          data: [{{ kpis.tier_validation.A.overdue }}, {{ kpis.tier_validation.B.overdue }}, {{ kpis.tier_validation.C.overdue }}],
-          backgroundColor: '#f87171',
-          hoverBackgroundColor: '#dc2626',
-          borderRadius: 6,
-          maxBarThickness: 46
+          data: {{ trend.counts_json|safe }},
+          borderColor: '#dc2626',
+          backgroundColor: 'rgba(248, 113, 113, 0.15)',
+          hoverBorderColor: '#b91c1c',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#dc2626',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          tension: 0.3,
+          fill: true
         }
       ]
     },
@@ -192,6 +190,7 @@
       responsive: true,
       maintainAspectRatio: true,
       aspectRatio: 2,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -200,7 +199,10 @@
           bodyColor: '#f8fafc',
           padding: 10,
           cornerRadius: 8,
-          displayColors: true
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => ctx.parsed.y + ' overdue'
+          }
         }
       },
       scales: {

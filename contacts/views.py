@@ -1,3 +1,6 @@
+import json
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -60,6 +63,50 @@ def get_kpis():
         "unresolved_duplicates": len(find_duplicates()),
     }
     return kpis
+
+
+def overdue_trend(months=12):
+    """Cumulative overdue active contacts at each month end, oldest first.
+
+    A contact counts as overdue at time T when T is past its
+    last_validated_at + tier SLA. Status is evaluated as of today, so a
+    contact since archived or deactivated is excluded from every month.
+    """
+    now = timezone.localtime(timezone.now())
+
+    sla_by_tier = {
+        Contact.Tier.TIER_A: Contact.VALIDATION_DAYS[Contact.Tier.TIER_A],
+        Contact.Tier.TIER_B: Contact.VALIDATION_DAYS[Contact.Tier.TIER_B],
+        Contact.Tier.TIER_C: Contact.VALIDATION_DAYS[Contact.Tier.TIER_C],
+    }
+    due_dates = [
+        last_validated_at + timedelta(days=sla_by_tier[tier])
+        for last_validated_at, tier in Contact.objects.filter(
+            status=Contact.Status.ACTIVE
+        ).values_list("last_validated_at", "tier")
+    ]
+
+    # One point per month, oldest first. The final point is `now` so the last
+    # value matches the live overdue KPI exactly; earlier points sit at the start
+    # of each calendar month. Stepping back a month first means the current
+    # month is represented only by the live point, so no label repeats.
+    month_starts = []
+    cursor = (now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+              - timedelta(days=1)).replace(day=1)
+    for _ in range(months - 1):
+        month_starts.append(cursor)
+        cursor = (cursor - timedelta(days=1)).replace(day=1)
+    month_starts.reverse()
+    anchors = month_starts + [now]
+
+    counts = [sum(1 for due in due_dates if anchor > due) for anchor in anchors]
+    labels = [a.strftime("%b %Y") for a in anchors]
+
+    return {
+        "labels_json": json.dumps(labels),
+        "counts_json": json.dumps(counts),
+        "months": months,
+    }
 
 
 def find_duplicates():
@@ -126,8 +173,6 @@ def dashboard(request):
                 "pct": round((tv["validated"] / tv["total"] * 100) if tv["total"] else 0, 1),
             }
         )
-    from django.utils import timezone
-
     hour = timezone.localtime(timezone.now()).hour
     if hour < 12:
         greeting = "Good morning"
@@ -142,6 +187,7 @@ def dashboard(request):
             "kpis": kpis,
             "tiers": tiers,
             "owners": owner_breakdown(),
+            "trend": overdue_trend(),
             "greeting": greeting,
             "today": timezone.localtime(timezone.now()),
         },
