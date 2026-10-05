@@ -565,6 +565,10 @@ svg { display: block; }
 .dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
 .dot-green { background: var(--green-600); }
 .dot-red { background: var(--red-500); }
+.dot-blue { background: var(--blue-600); }
+.dot-amber { background: var(--amber-500); }
+.dot-violet { background: var(--violet-500); }
+.dot-slate { background: var(--slate-400); }
 .dot-dashed {
   background: transparent;
   border-top: 2px dashed var(--slate-400);
@@ -596,6 +600,26 @@ svg { display: block; }
   background: var(--panel);
   color: var(--brand);
   box-shadow: var(--shadow-xs);
+}
+
+/* Chart card controls: metric picker above the range picker on narrow cards */
+.chart-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .chart-controls {
+    align-items: stretch;
+    width: 100%;
+  }
+  .chart-controls .segmented {
+    display: flex;
+    justify-content: space-between;
+  }
+  .chart-controls .segmented a { flex: 1; text-align: center; }
 }
 
 .badge-count {

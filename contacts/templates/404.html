@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Page not found — Guest DB{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:520px;margin:3rem auto;">
+  <div class="empty-state" style="padding:1.5rem 0.5rem">
+    <span class="empty-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </span>
+    <h3 style="font-size:1.15rem">Page not found (404)</h3>
+    <p>
+      That address doesn't match anything in the workspace. It may have been
+      renamed, or the link that brought you here could be out of date.
+    </p>
+    <div style="display:flex;gap:0.55rem;margin-top:0.6rem;flex-wrap:wrap;justify-content:center">
+      <a class="btn" href="{% url 'dashboard' %}">Back to dashboard</a>
+      <a class="btn btn-secondary" href="{% url 'contact_list' %}">Browse contacts</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

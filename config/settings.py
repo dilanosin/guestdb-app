@@ -10,27 +10,75 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
+def env_flag(name, default=False):
+    """Read a boolean from the environment, tolerating common truthy spellings."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-iju=h+6dcnjjasu1a**jx_(9j_572c$#4@i5wqbp=51&^fg9t+'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+def env_list(name, default):
+    """Read a comma-separated list, ignoring blanks.
 
-ALLOWED_HOSTS = ["*"]
+    An unset or blank variable falls back to the default so a mistyped
+    deployment variable cannot leave the app with an empty allowlist.
+    """
+    raw = os.environ.get(name)
+    items = [item.strip() for item in raw.split(",") if item.strip()] if raw else []
+    return items or list(default)
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.trycloudflare.com",
-    "https://*.app.github.dev",
-    "https://*.preview.app.github.dev",
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+# The secret key is read from the environment so it never lives in version
+# control. Development falls back to an ephemeral generated key, which means
+# sessions are invalidated on restart -- acceptable locally, never in prod.
+# ---------------------------------------------------------------------------
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or os.urandom(50).hex()
+
+DEBUG = env_flag("DJANGO_DEBUG", default=True)
+
+# Default is localhost-friendly; set DJANGO_ALLOWED_HOSTS in any real deployment.
+ALLOWED_HOSTS = env_list(
+    "DJANGO_ALLOWED_HOSTS",
+    default=["localhost", "127.0.0.1", "[::1]", ".app.github.dev"],
+)
+
+CSRF_TRUSTED_ORIGINS = env_list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    default=[
+        "https://*.trycloudflare.com",
+        "https://*.app.github.dev",
+        "https://*.preview.app.github.dev",
+    ],
+)
+
+# Only meaningful when DEBUG is off; applied so a production deploy is not
+# silently missing the standard hardening headers.
+SECURE_SSL_REDIRECT = env_flag("DJANGO_SECURE_SSL_REDIRECT", default=not DEBUG)
+SESSION_COOKIE_SECURE = env_flag("DJANGO_SESSION_COOKIE_SECURE", default=not DEBUG)
+CSRF_COOKIE_SECURE = env_flag("DJANGO_CSRF_COOKIE_SECURE", default=not DEBUG)
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "0" if DEBUG else "31536000"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+# Fixed-width, algorithm-aggressive password hashing (Django 5.2+ / 6.x).
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
 
 
@@ -59,6 +107,7 @@ MIDDLEWARE = [
 ]
 
 HANDLER403 = 'contacts.views.permission_denied'
+HANDLER404 = 'contacts.views.page_not_found'
 
 ROOT_URLCONF = 'config.urls'
 

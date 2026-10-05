@@ -98,26 +98,39 @@
   <div class="card chart-card">
     <div class="card-title-row">
       <div>
-        <h2>Overdue Trend</h2>
+        <h2>{{ trend.title }}</h2>
         <p class="card-sub">
-          Cumulative overdue active contacts, last {{ trend.months }} months
-          {% if trend.delta > 0 %}· up {{ trend.delta }} over the period
-          {% elif trend.delta < 0 %}· down {{ trend.delta_abs }} over the period
-          {% else %}· no net change{% endif %}
+          {{ trend.sub }}, last {{ trend.months }} months
+          {% if trend.metric_key == 'overdue' %}
+            {% if trend.delta > 0 %}· up {{ trend.delta }} over the period
+            {% elif trend.delta < 0 %}· down {{ trend.delta_abs }} over the period
+            {% else %}· no net change{% endif %}
+          {% else %}· {{ trend.total_now }} now{% endif %}
         </p>
       </div>
-      <div class="segmented" role="group" aria-label="Trend time range">
-        {% for r in trend.ranges %}
-          <a href="?range={{ r }}" {% if r == trend.months %}aria-current="true"{% endif %}>{{ r }}M</a>
-        {% endfor %}
+      <div class="chart-controls">
+        <div class="segmented" role="group" aria-label="Trend metric">
+          {% for m in trend.metrics %}
+            <a href="?metric={{ m.key }}&amp;range={{ trend.months }}" {% if m.key == trend.metric_key %}aria-current="true"{% endif %}>{{ m.label }}</a>
+          {% endfor %}
+        </div>
+        <div class="segmented" role="group" aria-label="Trend time range">
+          {% for r in trend.ranges %}
+            <a href="?metric={{ trend.metric_key }}&amp;range={{ r }}" {% if r == trend.months %}aria-current="true"{% endif %}>{{ r }}M</a>
+          {% endfor %}
+        </div>
       </div>
     </div>
     <div class="chart-legend" style="margin-bottom:0.75rem">
-      <span><i class="dot dot-red" aria-hidden="true"></i>Overdue</span>
-      <span><i class="dot dot-dashed" aria-hidden="true"></i>Target 0</span>
+      {% for s in trend.series %}
+        <span><i class="dot {{ s.dot }}" aria-hidden="true"></i>{{ s.label }}</span>
+      {% endfor %}
+      {% if trend.show_target %}
+        <span><i class="dot dot-dashed" aria-hidden="true"></i>Target 0</span>
+      {% endif %}
     </div>
     <div class="chart-box">
-      <canvas id="overdueChart" height="300" role="img" aria-label="Line chart of cumulative overdue contacts over the last {{ trend.months }} months"></canvas>
+      <canvas id="overdueChart" height="300" role="img" aria-label="Line chart of {{ trend.sub|lower }} over the last {{ trend.months }} months"></canvas>
     </div>
   </div>
 
@@ -210,79 +223,84 @@
 
 {% block scripts %}
 <script>
-  new Chart(document.getElementById('overdueChart'), {
-    type: 'line',
-    data: {
-      labels: {{ trend.labels_json|safe }},
-      datasets: [
-        {
-          label: 'Overdue',
-          data: {{ trend.counts_json|safe }},
-          borderColor: '#dc2626',
-          backgroundColor: 'rgba(248, 113, 113, 0.15)',
-          hoverBorderColor: '#b91c1c',
-          hoverBackgroundColor: 'rgba(248, 113, 113, 0.25)',
-          borderWidth: 2.5,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#dc2626',
-          pointBorderColor: '#ffffff',
-          pointBorderWidth: 2,
-          tension: 0.3,
-          fill: true
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 2,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0f172a',
-          titleColor: '#e2e8f0',
-          bodyColor: '#f8fafc',
-          padding: 10,
-          cornerRadius: 8,
-          displayColors: false,
-          callbacks: {
-            label: (ctx) => ctx.parsed.y + ' overdue'
+  (() => {
+    const canvas = document.getElementById('overdueChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const showTarget = {{ trend.show_target|yesno:"true,false" }};
+    const multipleSeries = {{ trend.series|length }} > 1;
+
+    const datasets = {{ trend.datasets_json|safe }}.map((base, index) => ({
+      ...base,
+      borderWidth: 2.5,
+      pointRadius: multipleSeries ? 3 : 4,
+      pointHoverRadius: multipleSeries ? 5 : 6,
+      pointBackgroundColor: base.borderColor,
+      pointBorderColor: '#ffffff',
+      pointBorderWidth: 2,
+      tension: 0.3,
+      fill: multipleSeries ? false : true,
+      borderDash: index === 0 ? [] : undefined
+    }));
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: {{ trend.labels_json|safe }},
+        datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0f172a',
+            titleColor: '#e2e8f0',
+            bodyColor: '#f8fafc',
+            padding: 10,
+            cornerRadius: 8,
+            usePointStyle: multipleSeries,
+            callbacks: {
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { color: '#94a3b8', font: { size: 11, weight: 600 }, maxRotation: 0, autoSkipPadding: 12 }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(148, 163, 184, 0.16)' },
+            border: { display: false },
+            ticks: { color: '#94a3b8', precision: 0 }
           }
         }
       },
-      scales: {
-        x: {
-          grid: { display: false },
-          border: { display: false },
-          ticks: { color: '#94a3b8', font: { size: 11, weight: 600 }, maxRotation: 0, autoSkipPadding: 12 }
-        },
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(148, 163, 184, 0.16)' },
-          border: { display: false },
-          ticks: { color: '#94a3b8', precision: 0 }
+      plugins: [{
+        id: 'targetLine',
+        afterDatasetsDraw(chart) {
+          if (!showTarget) return;
+          const { ctx, chartArea, scales } = chart;
+          if (!chartArea) return;
+          const y = scales.y.getPixelForValue(0);
+          ctx.save();
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
+          ctx.setLineDash([5, 4]);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(chartArea.left, y);
+          ctx.lineTo(chartArea.right, y);
+          ctx.stroke();
+          ctx.restore();
         }
-      }
-    },
-    plugins: [{
-      id: 'targetLine',
-      afterDatasetsDraw(chart) {
-        const { ctx, chartArea, scales } = chart;
-        if (!chartArea) return;
-        const y = scales.y.getPixelForValue(0);
-        ctx.save();
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.55)';
-        ctx.setLineDash([5, 4]);
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }]
-  });
+      }]
+    });
+  })();
 </script>
 {% endblock %}
